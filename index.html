@@ -51,6 +51,16 @@
                     var arr = new Uint8Array( buf );
                     return red_blocks.bytesToHex( arr );
                 },
+                header_retries: 0,
+                switchServer: async () => {
+                    var servers = red_blocks.electrum_servers;
+                    var current = red_blocks.electrum_server;
+                    var idx = servers.indexOf( current );
+                    red_blocks.electrum_server = servers[ ( idx + 1 ) % servers.length ];
+                    console.log( `switching to ${red_blocks.electrum_server}...` );
+                    try { red_blocks.socket.close(); } catch(e) {}
+                    red_blocks.socket = await red_blocks.connectToElectrumServer( red_blocks.electrum_server );
+                },
                 getHeaders: async ( blocknum, count ) => {
                     try {
                         var msg_id = red_blocks.getRand( 8 );
@@ -62,9 +72,15 @@
                         var response_from_server = await red_blocks.queryElectrumServer( red_blocks.socket, formatted_command, msg_id );
                         response_from_server = JSON.parse( response_from_server );
                         var arr = response_from_server.result.hex.match( new RegExp( `.{1,${160}}`, 'g' ) );
+                        red_blocks.header_retries = 0;
                         return arr;
                     } catch ( e ) {
-                        console.log( 'retrying headers request...' );
+                        red_blocks.header_retries++;
+                        console.log( `retrying headers request (attempt ${red_blocks.header_retries})...` );
+                        if ( red_blocks.header_retries >= 3 ) {
+                            red_blocks.header_retries = 0;
+                            await red_blocks.switchServer();
+                        }
                         await red_blocks.waitSomeTime( 1_000 );
                         return await red_blocks.getHeaders( blocknum, count );
                     }
@@ -111,9 +127,14 @@
                 },
                 queryElectrumServer: async ( socket, json, msg_id ) => {
                     if ( !json ) return 'you forgot to include a command';
-                    return new Promise( async resolve => {
-                        var handleFunction = async message => {
+                    return new Promise( ( resolve, reject ) => {
+                        var timeout = setTimeout( () => {
+                            socket.removeEventListener( 'message', handleFunction );
+                            reject( new Error( 'electrum request timed out' ) );
+                        }, 10_000 );
+                        var handleFunction = message => {
                             if ( message.data.includes( msg_id ) ) {
+                                clearTimeout( timeout );
                                 resolve( message.data );
                                 socket.removeEventListener( 'message', handleFunction );
                             }
@@ -312,10 +333,21 @@
 
             ;(async()=>{
                 red_blocks.electrum_server = red_blocks.electrum_servers[ Math.floor( Math.random() * red_blocks.electrum_servers.length ) ];
+                var bh_retries = 0;
                 var bhLoop = async () => {
-                    if ( !red_blocks.socket || red_blocks.socket.readyState !== 1 ) red_blocks.socket = await red_blocks.connectToElectrumServer( red_blocks.electrum_server );
-                    var bc_info = await red_blocks.getBlockchainInfo();
-                    red_blocks.blockheight = bc_info.result.height;
+                    try {
+                        if ( !red_blocks.socket || red_blocks.socket.readyState !== 1 ) red_blocks.socket = await red_blocks.connectToElectrumServer( red_blocks.electrum_server );
+                        var bc_info = await red_blocks.getBlockchainInfo();
+                        red_blocks.blockheight = bc_info.result.height;
+                        bh_retries = 0;
+                    } catch ( e ) {
+                        bh_retries++;
+                        console.log( `blockchain info failed (attempt ${bh_retries})` );
+                        if ( bh_retries >= 3 ) {
+                            bh_retries = 0;
+                            await red_blocks.switchServer();
+                        }
+                    }
                     await red_blocks.waitSomeTime( 2_000 );
                     bhLoop();
                 }
