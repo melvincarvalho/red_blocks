@@ -1,13 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, user-scalable=no">
-        <title>Red Blocks</title>
+        <title>Red Blocks - BIP110 Activation Tracker</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            signal: {
+                                green: '#6ee7b7',
+                                red: '#fca5a5',
+                                empty: '#e5e7eb',
+                                'green-bold': '#34d399',
+                                'red-bold': '#f87171',
+                            }
+                        }
+                    }
+                }
+            }
+        </script>
         <script>
             var red_blocks = {
                 electrum_servers: [
-                    // `wss://horsey.cryptocowboys.net:50004`,
                     `wss://btc.electroncash.dk:60004`,
                     `wss://bitcoin.grey.pw:50004`,
                     `wss://blackie.c3-soft.com:57004`,
@@ -106,14 +123,12 @@
                     });
                 },
                 getBlockchainInfo: async () => {
-                    //wait til socket is ready
                     var loop = async () => {
                         if ( red_blocks.socket && red_blocks.socket.readyState === 1 ) return;
                         await red_blocks.waitSomeTime( 10 );
                         return loop();
                     }
                     await loop();
-                    //get the header
                     var msg_id = red_blocks.getRand( 8 );
                     var formatted_command = {
                         "id": msg_id,
@@ -125,14 +140,12 @@
                     return response_from_server;
                 },
                 getHeader: async blocknum => {
-                    //wait til socket is ready
                     var loop = async () => {
                         if ( red_blocks.socket && red_blocks.socket.readyState === 1 ) return;
                         await red_blocks.waitSomeTime( 10 );
                         return loop();
                     }
                     await loop();
-                    //get the header
                     var msg_id = red_blocks.getRand( 8 );
                     var formatted_command = {
                         "id": msg_id,
@@ -143,103 +156,6 @@
                     response_from_server = JSON.parse( response_from_server );
                     return response_from_server;
                 },
-            }
-        </script>
-        <style>
-            * {
-                box-sizing: border-box;
-                font-size: 1.15rem;
-                font-family: Arial, sans-serif;
-            }
-            html {
-                max-width: 800px;
-                padding: 3rem 1rem;
-                margin: auto;
-                line-height: 1.25;
-                padding: 0;
-            }
-            body {
-                margin: 3rem 1rem;
-                word-wrap: break-word;
-            }
-            h1 {
-                font-size: 2rem;
-            }
-            h2 {
-                font-size: 1.5rem;
-            }
-            input {
-                line-height: 1.25;
-                width: 100%;
-                height: 1.8rem;
-                font-size: 1.15rem;
-                border: 1px solid grey;
-            }
-            .hidden {
-                display: none !important;
-            }
-            .square {
-                width: 75px;
-                text-align: center;
-                float: left;
-                margin: .5rem;
-                border: 1px dotted blue;
-                padding: .5rem;
-                cursor: pointer;
-            }
-            .square:hover {
-                border: 1px solid blue;
-                background-color: lightblue;
-            }
-            @media screen and (max-width: 600px) {
-            }
-        </style>
-        <style>
-            .black-bg {
-                width: 100%;
-                position: fixed;
-                top: 0;
-                left: 0;
-                background-color: black;
-                opacity: .5;
-                width: 100vw;
-                height: 100vh;
-            }
-            .modal {
-                position: fixed;
-                box-sizing: border-box;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%,-50%);
-                width: 90%;
-                max-width: 560px;
-                background-color: white;
-                border-radius: 1rem;
-                padding: 20px;
-                color: black;
-                text-align: center;
-                word-wrap: break-word;
-            }
-            .modal * {
-                color: black;
-            }
-            .modal input, .modal textarea {
-                max-width: 90%;
-            }
-            .hidden {
-                display: none !important;
-            }
-        </style>
-        <script>
-            var modalVanish = () => {
-                $( ".black-bg" ).classList.add( "hidden" );
-                $( ".modal" ).classList.add( "hidden" );
-            }
-            var showModal = content => {
-                $( ".modal" ).innerHTML = `<div class="x_modal" style="position: absolute;right: 1rem;top: 0.5rem;font-size: 2rem; cursor: pointer; color: black;" onclick="modalVanish()">&times;</div>`;
-                $( ".modal" ).innerHTML += `<div style="overflow-y: auto; max-height: 80vh; margin-top: 1.5rem;">${content}</div>`;
-                $( ".black-bg" ).classList.remove( "hidden" );
-                $( ".modal" ).classList.remove( "hidden" );
             }
         </script>
         <script>
@@ -257,27 +173,144 @@
                 $_HASH[ vals[ 0 ] ] = vals[ 1 ];
             });
         </script>
+        <style>
+            .block-tile {
+                transition: transform 0.1s ease, box-shadow 0.1s ease;
+            }
+            .block-tile:hover {
+                transform: scale(1.3);
+                z-index: 10;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .progress-segment {
+                transition: width 0.5s ease;
+            }
+        </style>
     </head>
-    <body>
-        <h1>Red Blocks</h1>
-        <div class="webpage load_page"><p>loading...</p></div>
-        <div class="webpage home_page hidden">
-            <p>Track the activation status of BIP110</p>
-            <p class="hidden">Start height of this signaling window: <span class="start_height"></span></p>
-            <p class="hidden">Current blockheight: <span class="current_height"></span></p>
-            <p>Number of red blocks so far: <span class="count_of_red">0</span></p>
-            <p>Number of green blocks so far: <span class="count_of_green">0</span></p>
-            <p>Number of green blocks needed for activation: 1109 (55%)</p>
-            <p>Remaining blocks in this signaling window: <span class="blocks_left">2016</span> of 2016</p>
-            <p><a href="https://github.com/supertestnet/red_blocks" target="_blank">View the source</a></p>
-            <div class="blocks"></div>
+    <body class="bg-stone-50 text-stone-700 min-h-screen">
+        <!-- Loading page -->
+        <div class="webpage load_page flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="inline-block w-8 h-8 border-4 border-stone-300 border-t-stone-600 rounded-full animate-spin mb-4"></div>
+                <p class="text-stone-500 text-lg">Connecting to network...</p>
+            </div>
         </div>
+
+        <!-- Main page -->
+        <div class="webpage home_page hidden">
+            <div class="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+                <!-- Header -->
+                <div class="mb-8 text-center">
+                    <h1 class="text-3xl sm:text-4xl font-bold text-stone-800 tracking-tight mb-2">Red Blocks</h1>
+                    <p class="text-stone-500">Track the activation status of <a href="https://github.com/bitcoin/bips/blob/master/bip-0110.mediawiki" target="_blank" class="text-blue-500 hover:text-blue-600 underline underline-offset-2">BIP110</a></p>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 sm:p-6 mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-medium text-stone-500">Epoch progress</span>
+                        <span class="text-sm text-stone-400"><span class="blocks_left">2016</span> blocks remaining</span>
+                    </div>
+                    <div class="w-full h-5 bg-stone-100 rounded-full overflow-hidden flex">
+                        <div class="progress-segment bg-signal-green rounded-l-full" id="progress-green" style="width: 0%"></div>
+                        <div class="progress-segment bg-signal-red" id="progress-red" style="width: 0%"></div>
+                    </div>
+                    <div class="flex items-center justify-between mt-3 text-xs text-stone-400">
+                        <span>0%</span>
+                        <div class="flex items-center gap-1">
+                            <div class="w-px h-3 bg-stone-300" style="margin-left: 0"></div>
+                            <span>55% threshold (1109 blocks)</span>
+                        </div>
+                        <span>100%</span>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
+                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Signaling</p>
+                        <p class="text-2xl font-bold text-emerald-500 count_of_green">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
+                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Not signaling</p>
+                        <p class="text-2xl font-bold text-red-400 count_of_red">0</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
+                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Needed</p>
+                        <p class="text-2xl font-bold text-stone-600">1109</p>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
+                        <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Remaining</p>
+                        <p class="text-2xl font-bold text-stone-600 blocks_left">2016</p>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex items-center justify-center gap-6 mb-5 text-sm text-stone-500">
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-signal-green-bold"></span> Signaling</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-signal-red-bold"></span> Not signaling</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm bg-stone-200 border border-stone-300"></span> Not mined</span>
+                </div>
+
+                <!-- Blocks grid -->
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-3 sm:p-4 mb-6">
+                    <div class="blocks flex flex-wrap gap-[2px]"></div>
+                </div>
+
+                <!-- Footer -->
+                <p class="text-center text-sm text-stone-400">
+                    <a href="https://github.com/supertestnet/red_blocks" target="_blank" class="hover:text-stone-600 underline underline-offset-2">Source code</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Modal backdrop -->
+        <div class="black-bg hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onclick="modalVanish();"></div>
+
+        <!-- Modal -->
+        <div class="modal hidden fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-white rounded-2xl shadow-xl border border-stone-200 p-6"></div>
+
+        <script>
+            var modalVanish = () => {
+                $( ".black-bg" ).classList.add( "hidden" );
+                $( ".modal" ).classList.add( "hidden" );
+            }
+            var showModal = content => {
+                $( ".modal" ).innerHTML = `<button class="absolute right-4 top-3 text-2xl text-stone-400 hover:text-stone-600 cursor-pointer leading-none" onclick="modalVanish()">&times;</button>`;
+                $( ".modal" ).innerHTML += `<div class="overflow-y-auto max-h-[80vh] mt-2 text-stone-700 text-sm space-y-2">${content}</div>`;
+                $( ".black-bg" ).classList.remove( "hidden" );
+                $( ".modal" ).classList.remove( "hidden" );
+            }
+        </script>
+
         <script>
             var showPage = page => {
                 $$( '.webpage' ).forEach( item => item.classList.add( "hidden" ) );
                 $( `.${page}` ).classList.remove( "hidden" );
             }
-            (async()=>{
+
+            var updateProgress = ( green, red ) => {
+                var total = 2016;
+                var greenPct = ( green / total * 100 ).toFixed( 1 );
+                var redPct = ( red / total * 100 ).toFixed( 1 );
+                $( '#progress-green' ).style.width = greenPct + '%';
+                $( '#progress-red' ).style.width = redPct + '%';
+                // round the right end if they fill the bar
+                if ( green + red >= total ) {
+                    $( '#progress-red' ).classList.add( 'rounded-r-full' );
+                } else {
+                    $( '#progress-red' ).classList.remove( 'rounded-r-full' );
+                }
+            }
+
+            var makeBlockTile = ( blockheight, blocknum, is_green, is_red ) => {
+                var colorClasses = 'bg-stone-200 border-stone-300';
+                if ( is_green ) colorClasses = 'bg-signal-green border-signal-green-bold';
+                if ( is_red ) colorClasses = 'bg-signal-red border-signal-red-bold';
+                return `<div class="block-tile w-[11px] h-[11px] sm:w-[13px] sm:h-[13px] rounded-[2px] border cursor-pointer relative ${colorClasses}" data-blocknum="${blocknum}" data-blockheight="${blockheight}" title="Block ${blocknum}"></div>`;
+            }
+
+            ;(async()=>{
                 red_blocks.electrum_server = red_blocks.electrum_servers[ Math.floor( Math.random() * red_blocks.electrum_servers.length ) ];
                 var bhLoop = async () => {
                     if ( !red_blocks.socket || red_blocks.socket.readyState !== 1 ) red_blocks.socket = await red_blocks.connectToElectrumServer( red_blocks.electrum_server );
@@ -297,8 +330,6 @@
                     var start_height = current_blockheight - ( current_blockheight % 2016 );
                     var headers = await red_blocks.getHeaders( start_height, current_blockheight - start_height );
                     headers.forEach( ( item, index ) => red_blocks.blockheights[ start_height + index ] = item );
-                    $( '.current_height' ).innerText = current_blockheight;
-                    $( '.start_height' ).innerText = start_height;
                     var num_of_blocks = 2016;
                     var html = ``;
                     var count_of_green = 0;
@@ -316,61 +347,63 @@
                             var is_green = !!Number( version_bin.split( "" ).reverse()[ 4 ] );
                             var is_red = !Number( version_bin.split( "" ).reverse()[ 4 ] );
                         }
-                        var square = '⬜';
-                        if ( is_green !== is_red ) {
-                            if ( is_green ) square = '🟩';
-                            else square = '🟥';
-                        }
                         if ( is_green ) count_of_green = count_of_green + 1;
                         if ( is_red ) count_of_red = count_of_red + 1;
-                        var html = html + `
-                            <div class="square" data-blocknum="${i}" data-blockheight="${blockheight}">
-                                <div class="emoji">
-                                    ${square}
-                                </div>
-                                <div class="blocknum">
-                                    ${i}
-                                </div>
-                            </div>
-                        `;
+                        html = html + makeBlockTile( blockheight, i, is_green, is_red );
                     }
                     var div = document.createElement( "div" );
+                    div.className = "flex flex-wrap gap-[2px]";
                     div.innerHTML = html;
                     $( '.blocks' ).innerHTML = ``;
                     $( '.blocks' ).append( div );
-                    $$( '.square' ).forEach( item => item.onclick = e => {
+                    $$( '.block-tile' ).forEach( item => item.onclick = e => {
                         var target = e.target;
-                        if ( !target.classList.contains( "square" ) ) target = target.parentElement;
+                        if ( !target.classList.contains( "block-tile" ) ) target = target.parentElement;
                         var blockheight = target.getAttribute( "data-blockheight" );
                         var blocknum = target.getAttribute( "data-blocknum" );
                         var raw_header = red_blocks.blockheights[ blockheight ];
                         var html = `
-                            <p>Blockheight: ${blockheight}</p>
-                            <p>In this epoch: ${blocknum}</p>
+                            <p class="text-base font-semibold text-stone-800 mb-3">Block details</p>
+                            <div class="space-y-1.5">
+                                <p><span class="text-stone-400">Height:</span> <span class="font-mono">${blockheight}</span></p>
+                                <p><span class="text-stone-400">Position in epoch:</span> <span class="font-mono">${blocknum}</span> / 2016</p>
                         `;
                         if ( raw_header ) {
                             var parsed_header = red_blocks.parseHeader( raw_header );
                             var version_hex = parsed_header.version;
                             var version_bin = red_blocks.hexToBinary( version_hex );
                             var version_arr = version_bin.split( "" ).reverse();
+                            var is_signaling = !!Number( version_arr[ 4 ] );
                             var version_str = "";
                             version_arr.forEach( ( item, index ) => {
-                                var color = index === 4 ? "yellow" : "white";
-                                version_str = version_str + `<span style="background-color: ${color};">${item}</span>`;
+                                var classes = index === 4
+                                    ? "bg-amber-200 text-amber-900 font-bold px-0.5 rounded"
+                                    : "text-stone-500";
+                                version_str = version_str + `<span class="${classes}">${item}</span>`;
                             });
+                            var statusBadge = is_signaling
+                                ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Signaling</span>`
+                                : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Not signaling</span>`;
                             html = html + `
-                                <p>Version bits in this block:</p>
-                                <p>${version_str}</p>
-                                <p>The BIP110 signaling bit is highlighted in yellow</p>
+                                <p><span class="text-stone-400">Status:</span> ${statusBadge}</p>
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-stone-100">
+                                    <p class="text-stone-400 text-xs mb-2">Version bits (BIP110 bit highlighted):</p>
+                                    <p class="font-mono text-xs leading-relaxed tracking-wider break-all">${version_str}</p>
+                                </div>
                             `;
                         } else {
-                            html = html + `<p>Not mined yet</p>`;
+                            html = html + `
+                                <p><span class="text-stone-400">Status:</span> <span class="text-stone-400 italic">Not mined yet</span></p>
+                                </div>
+                            `;
                         }
                         showModal( html );
                     });
-                    $( '.count_of_green' ).innerText = count_of_green;
-                    $( '.count_of_red' ).innerText = count_of_red;
-                    $( '.blocks_left' ).innerText = 2016 - ( count_of_green + count_of_red );
+                    $$( '.count_of_green' ).forEach( el => el.innerText = count_of_green );
+                    $$( '.count_of_red' ).forEach( el => el.innerText = count_of_red );
+                    $$( '.blocks_left' ).forEach( el => el.innerText = 2016 - ( count_of_green + count_of_red ) );
+                    updateProgress( count_of_green, count_of_red );
                     showPage( 'home_page' );
                     await red_blocks.waitSomeTime( 2_000 );
                     drawLoop( current_blockheight );
@@ -393,19 +426,26 @@
                         var version_bin = red_blocks.hexToBinary( version_hex );
                         var is_green = !!Number( version_bin.split( "" ).reverse()[ 4 ] );
                         var is_red = !Number( version_bin.split( "" ).reverse()[ 4 ] );
-                        var square = '⬜';
-                        if ( is_green !== is_red ) {
-                            if ( is_green ) square = '🟩';
-                            else square = '🟥';
-                        }
                         var count_of_green = Number( $( '.count_of_green' ).innerText );
                         var count_of_red = Number( $( '.count_of_red' ).innerText );
                         if ( is_green ) count_of_green = count_of_green + 1;
                         if ( is_red ) count_of_red = count_of_red + 1;
-                        $( '.count_of_green' ).innerText = count_of_green;
-                        $( '.count_of_red' ).innerText = count_of_red;
-                        $( '.blocks_left' ).innerText = 2016 - ( count_of_green + count_of_red );
-                        $( `[data-blockheight="${blockheight}"]` ).getElementsByClassName( "emoji" )[ 0 ].innerText = square;
+                        $$( '.count_of_green' ).forEach( el => el.innerText = count_of_green );
+                        $$( '.count_of_red' ).forEach( el => el.innerText = count_of_red );
+                        $$( '.blocks_left' ).forEach( el => el.innerText = 2016 - ( count_of_green + count_of_red ) );
+                        updateProgress( count_of_green, count_of_red );
+                        // Update the tile color
+                        var tile = $( `[data-blockheight="${blockheight}"]` );
+                        if ( tile ) {
+                            tile.className = tile.className
+                                .replace( /bg-\S+/g, '' )
+                                .replace( /border-\S+/g, '' );
+                            if ( is_green ) {
+                                tile.classList.add( 'bg-signal-green', 'border-signal-green-bold' );
+                            } else {
+                                tile.classList.add( 'bg-signal-red', 'border-signal-red-bold' );
+                            }
+                        }
                     }
                     await red_blocks.waitSomeTime( 2_000 );
                     getHeaders();
@@ -413,7 +453,5 @@
                 getHeaders();
             })();
         </script>
-        <div class="black-bg hidden" onclick="modalVanish();"></div>
-        <div class="modal hidden"></div>
     </body>
 </html>
