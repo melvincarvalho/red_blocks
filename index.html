@@ -11,11 +11,11 @@
                     extend: {
                         colors: {
                             signal: {
-                                green: '#6ee7b7',
-                                red: '#fca5a5',
+                                green: '#16a34a',
+                                red: '#dc2626',
                                 empty: '#e5e7eb',
-                                'green-bold': '#34d399',
-                                'red-bold': '#f87171',
+                                'green-bold': '#15803d',
+                                'red-bold': '#b91c1c',
                             }
                         }
                     }
@@ -229,11 +229,11 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
                     <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
                         <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Signaling</p>
-                        <p class="text-2xl font-bold text-emerald-500 count_of_green">0</p>
+                        <p class="text-2xl font-bold text-green-700 count_of_green">0</p>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
                         <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Not signaling</p>
-                        <p class="text-2xl font-bold text-red-400 count_of_red">0</p>
+                        <p class="text-2xl font-bold text-red-700 count_of_red">0</p>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 text-center">
                         <p class="text-xs font-medium text-stone-400 uppercase tracking-wider mb-1">Needed</p>
@@ -382,8 +382,8 @@
                                 version_str = version_str + `<span class="${classes}">${item}</span>`;
                             });
                             var statusBadge = is_signaling
-                                ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Signaling</span>`
-                                : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Not signaling</span>`;
+                                ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Signaling</span>`
+                                : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Not signaling</span>`;
                             html = html + `
                                 <p><span class="text-stone-400">Status:</span> ${statusBadge}</p>
                                 </div>
